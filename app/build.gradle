@@ -10,6 +10,8 @@ android {
         targetSdkVersion 23
         versionCode 1
         versionName "1.0"
+
+        multiDexEnabled true
     }
     buildTypes {
         release {
@@ -38,8 +40,9 @@ dependencies {
     compile 'com.android.support:appcompat-v7:23.1.1'
     compile 'com.android.support:design:23.1.1'
     compile (name: 'beaconstac-release', ext: 'aar')
-    compile 'com.mcxiaoke.volley:library:1.0.17'
     compile 'com.google.android.gms:play-services:8.3.0'
     compile 'com.crittercism:crittercism-android-agent:5.0.6'
     compile 'com.facebook.android:facebook-android-sdk:4.6.0'
+    compile 'com.squareup.okhttp3:okhttp:3.0.1'
+    compile 'com.android.support:multidex:1.0.0'
 }

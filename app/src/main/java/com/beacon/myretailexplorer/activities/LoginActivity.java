@@ -5,7 +5,6 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.design.widget.CoordinatorLayout;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -14,25 +13,15 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
-import com.android.volley.Request;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.StringRequest;
-import com.beacon.myretailexplorer.AppConfig;
-import com.beacon.myretailexplorer.AppController;
 import com.beacon.myretailexplorer.PrefManager;
 import com.beacon.myretailexplorer.R;
 import com.facebook.CallbackManager;
 import com.facebook.FacebookException;
 import com.facebook.AccessToken;
-import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
-import com.facebook.FacebookException;
 import com.facebook.FacebookSdk;
 import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
-import com.facebook.Profile;
-import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
 import com.google.android.gms.auth.api.Auth;
@@ -54,11 +43,17 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class LoginActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener, View.OnClickListener {
 
@@ -73,10 +68,11 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
     CoordinatorLayout coordinatorLayout;
     Button btn_continue_retailer;
 
-    private static final String LOGIN_URL = "192.168.1.105/myretailexplorer/create_user.php";
+    private static final String LOGIN_URL = "http://192.168.1.105/myretailexplorer/create_user.php";
     public static final String KEY_EMAIL = "email";
     public static final String KEY_NAME = "name";
     public static final String KEY_GENDER = "gender";
+    public static final MediaType FORM_DATA_TYPE = MediaType.parse("application/x-www-form-urlencoded; charset=utf-8");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -254,7 +250,64 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
             JSONObject jsonObject = new JSONObject();
 
             int returnCode = 88;
+            Boolean result = true;
+            String postBody = "";
+
             try {
+                //all values must be URL encoded to make sure that special characters like & | ",etc.
+                //do not cause problems
+                postBody =    KEY_EMAIL + "=" + URLEncoder.encode(params[0],"UTF-8") +
+                        "&" + KEY_NAME + "=" + URLEncoder.encode(params[1],"UTF-8") +
+                        "&" + KEY_GENDER + "=" + URLEncoder.encode(params[0],"UTF-8");
+                Log.d("postBody: ", postBody);
+            } catch (UnsupportedEncodingException ex) {
+                result=false;
+            }
+
+            /*
+            //If you want to use HttpRequest class from http://stackoverflow.com/a/2253280/1261816
+            try {
+			HttpRequest httpRequest = new HttpRequest();
+			httpRequest.sendPost(url, postBody);
+		}catch (Exception exception){
+			result = false;
+		}
+            */
+
+            try{
+                //Create OkHttpClient for sending request
+                OkHttpClient client = new OkHttpClient();
+                //Create the request body with the help of Media Type
+                RequestBody body = RequestBody.create(FORM_DATA_TYPE, postBody);
+                Request request = new Request.Builder()
+                        .url(LOGIN_URL)
+                        .post(body)
+                        .build();
+                //Send the request
+                Response response = client.newCall(request).execute();
+
+                JSONObject jsonResponse = new JSONObject(response.body().string());
+
+                String jsonData = response.body().string();
+                JSONObject responseJSON = new JSONObject(jsonData);
+                String message = responseJSON.getString("message");
+
+                returnCode = responseJSON.getInt("returnCode");
+
+                Log.d("POST Response:", message);
+
+            }catch (IOException e){
+                Log.d("IOExcptn", e.getMessage());
+                result=false;
+            } catch (JSONException e) {
+                Log.d("JSONExcptn", e.getMessage());
+                e.printStackTrace();
+            }
+            return returnCode;
+
+
+
+            /*try {
                 jsonObject.put("email", params[0]);
                 jsonObject.put("name", params[1]);
                 jsonObject.put("gender", params[2]);
@@ -303,10 +356,11 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
                 returnCode = response.getInt("returnCode");
             } catch (JSONException | IOException e) {
                 e.printStackTrace();
+                Log.d("IOexcptn", e.getMessage());
             }
             Log.d(TAG, "Login returnCode = " + returnCode);
             return returnCode;
-
+            */
 
         }
 
