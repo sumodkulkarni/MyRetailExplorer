@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">MyRetailExplorer</string>
+    <string name="action_settings">Settings</string>
+    <string name="facebook_app_id">972778349482518</string>
+    <string name="logout">Logout</string>
+
+    <string name="title_activity_login">LoginActivity</string>
+    <string name="btn_link_to_register">Continue as a Retailer</string>
+</resources>
